@@ -1,0 +1,45 @@
+C:\Users\usach\Downloads\amazon_reviews_us_Digital_Ebook_Purchase_v1_01_1_7.tsv
+
+CREATE KEYSPACE reviews
+     WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
+
+t1
+CREATE TABLE reviews.reviews_by_product_id (
+product_id text,
+review_id text,
+star_rating int,
+PRIMARY KEY ((product_id), review_id)) WITH comment = 'Q1'
+AND CLUSTERING ORDER BY (review_id ASC);
+
+t2
+CREATE TABLE reviews.reviews_by_star_rating_and_product_id (
+product_id text,
+review_id text,
+star_rating int,
+PRIMARY KEY ((product_id), star_rating, review_id)) WITH comment = 'Q2'
+AND CLUSTERING ORDER BY (star_rating ASC);
+
+t3
+CREATE TABLE reviews.reviews_by_customer_id (
+customer_id int,
+review_id text,
+PRIMARY KEY ((customer_id), review_id)) WITH comment = 'Q3'
+AND CLUSTERING ORDER BY (review_id ASC);
+
+Q1
+SELECT review_id FROM reviews.reviews_by_product_id WHERE product_id = 'B00EFDZ288';
+
+Q2
+SELECT JSON review_id FROM reviews.reviews_by_star_rating_and_product_id
+WHERE product_id = 'B00EFDZ288' AND star_rating = 5;
+
+Q3
+SELECT review_id FROM reviews.reviews_by_customer_id
+WHERE customer_id = 36554234;
+
+Q4
+SELECT  customer_id, COUNT(customer_id) FROM reviews.all
+                                 GROUP BY customer_id
+                                 LIMIT 20;
+
+Q5
