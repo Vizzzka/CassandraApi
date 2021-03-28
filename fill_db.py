@@ -1,4 +1,5 @@
 from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
 import csv
 import os
 import sys
@@ -10,7 +11,9 @@ sys_exit = sys.exit
 
 
 if __name__ == '__main__':
-    cluster = Cluster()
+    auth_provider = PlainTextAuthProvider(
+    username='cassandra', password='Lt5PCbgaEaTe')
+    cluster = Cluster(auth_provider=auth_provider)
     session = cluster.connect('reviews')
     file_path = input('Input path to .tsv file: ')
 
@@ -19,7 +22,6 @@ if __name__ == '__main__':
         sys_exit()
 
     skipped_rows = 0
-    df = pd.read_csv(file_path, sep='\t', header=0)
 
     # preparing and executing my INSERT statement
     strCQL_1 = "INSERT INTO reviews.reviews_by_product_id (product_id, review_id)" \
@@ -47,17 +49,24 @@ if __name__ == '__main__':
                  " VALUES (?,?,?,?,?);"
     pStatement_7_8 = session.prepare(strCQL_7_8)
 
-    for index, row in df.iterrows():
-        if len(row) != 15:
-            skipped_rows += 1
-            continue
-        year_month = '-'.join(row[14].split('-')[:2])
-        #session.execute(pStatement_1, [row[3], row[2]])
-        #session.execute(pStatement_2, [row[3], row[7], row[2]])
-        #session.execute(pStatement_3, [row[1], row[2]])
-        #session.execute(pStatement_4, [year_month, row[14], row[3], row[2]])
-        #session.execute(pStatement_5, [year_month, row[11], row[14], row[1], row[2]])
-        session.execute(pStatement_7_8, [year_month, row[7], row[14], row[1], row[2]])
+    with open(file_path, 'r', newline='', encoding='utf-8') as tsv_file:
+        reader = csv.reader(tsv_file, delimiter='\t', quotechar='\'')
+        for index, row in enumerate(reader):
+            if len(row) != 15:
+                skipped_rows += 1
+                continue
+            year_month = '-'.join(row[14].split('-')[:2])
+            try:
+                star_rating = int(row[7])
+                customer_id = int(row[1])
+            except:
+                continue
+            session.execute(pStatement_1, [row[3], row[2]])
+            session.execute(pStatement_2, [row[3], star_rating, row[2]])
+            session.execute(pStatement_3, [customer_id, row[2]])
+            session.execute(pStatement_4, [year_month, row[14], row[3], row[2]])
+            session.execute(pStatement_5, [year_month, row[11], row[14], customer_id, row[2]])
+            session.execute(pStatement_7_8, [year_month, star_rating, row[14], customer_id, row[2]])
 
-        if index % 10000 == 0:
-            print("Row processed: {}".format(index))
+            if index % 10000 == 0:
+                print("Row processed: {}".format(index))
