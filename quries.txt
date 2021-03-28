@@ -60,16 +60,16 @@ Q1
 SELECT review_id FROM reviews.reviews_by_product_id WHERE product_id = 'B00EFDZ288';
 
 Q2
-SELECT JSON review_id FROM reviews.reviews_by_star_rating_and_product_id
-WHERE product_id = 'B00EFDZ288' AND star_rating = 5;
+SELECT review_id FROM reviews.reviews_by_star_rating_and_product_id
+WHERE product_id = '0385418132' AND star_rating = 5;
 
 Q3
 SELECT review_id FROM reviews.reviews_by_customer_id
-WHERE customer_id = 36554234;
+WHERE customer_id = 38982620;
 
 Q4
 SELECT  product_id FROM reviews.item_reviews_by_date
-WHERE year_month = '2013-09' AND review_date >= '2013-08-01' AND review_date <= '2013-10-01';
+WHERE year_month = '2015-01' AND review_date >= '2015-01-01' AND review_date <= '2015-03-01';
 
 
 Q5
@@ -80,3 +80,96 @@ AND review_date <= '2013-10-01' AND verified_purchase = 'Y';
 Q7-Q8
 SELECT customer_id FROM reviews.customers_reviews_by_date_and_star_rating
 WHERE year_month = '2013-09' AND star_rating = 5 AND review_date <= '2013-10-01' AND review_date >= '2013-08-01';
+
+
+
+--------------mysql queries
+
+
+// full table
+CREATE TABLE IF NOT EXISTS all_reviews (
+marketplace TEXT,
+customer_id  INT,
+review_id    CHAR(16) PRIMARY KEY,
+product_id   TEXT,
+product_parent  TEXT,
+product_title TEXT,
+product_category TEXT,
+star_rating INT,
+helpful_votes INT,
+total_votes INT,
+vine TEXT,
+verified_purchase TEXT,
+review_headline TEXT,
+review_body TEXT,
+review_date DATE
+);
+
+CREATE TABLE reviews(
+review_id CHAR(16) PRIMARY KEY,
+product_id CHAR(16),
+customer_id INT,
+review_headline CHAR(255),
+review_body TEXT,
+review_date DATE,
+star_rating INT,
+FOREIGN KEY(product_id) REFERENCES products(product_id)
+);
+
+CREATE TABLE products(
+product_id CHAR(16) PRIMARY KEY,
+product_title CHAR(255),
+product_category CHAR(255)
+);
+
+
+LOAD DATA LOCAL INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/amazon_reviews_us_Digital_Ebook_Purchase_v1_01_1_7.tsv'
+INTO TABLE all_reviews
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+
+INSERT INTO products (product_id,product_title,product_category)
+SELECT product_id,product_title,product_category
+FROM (SELECT product_id,product_title,product_category FROM all_reviews GROUP BY product_id) as foo;
+
+INSERT INTO reviews (review_id, product_id, customer_id,
+ review_headline, review_body, review_date, star_rating)
+ SELECT review_id, product_id, customer_id,
+ review_headline, review_body, review_date, star_rating
+ FROM all_reviews;
+
+#Q1
+SELECT review_id FROM reviews WHERE product_id = 'B00C3U9TAC';
+#Q2
+SELECT review_id FROM reviews WHERE product_id='B00C3U9TAC' AND star_rating = 5;
+#Q3
+SELECT review_id FROM reviews WHERE customer_id = 17288928;
+#Q4
+SELECT product_id, COUNT(product_id) as num_reviews
+FROM reviews WHERE '2013-09-04' <= review_date AND review_date <= '2013-10-04'
+GROUP BY product_id
+ORDER BY num_reviews DESC
+LIMIT 20;
+#Q5
+SELECT customer_id, COUNT(customer_id) as num_reviews
+FROM reviews WHERE '2013-09-04' <= review_date AND review_date <= '2013-10-04'
+GROUP BY customer_id
+ORDER BY num_reviews DESC
+LIMIT 20;
+#Q6
+
+#Q7
+SELECT customer_id, COUNT(customer_id) as num_reviews
+FROM reviews WHERE '2013-09-04' <= review_date AND review_date <= '2013-10-04' AND star_rating <= 2
+GROUP BY customer_id
+ORDER BY num_reviews DESC
+LIMIT 20;
+
+#Q8
+SELECT customer_id, COUNT(customer_id) as num_reviews
+FROM reviews WHERE '2013-09-04' <= review_date AND review_date <= '2013-10-04' AND star_rating >= 4
+GROUP BY customer_id
+ORDER BY num_reviews DESC
+LIMIT 20;

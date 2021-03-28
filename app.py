@@ -41,7 +41,7 @@ def reviews_by_product_id(product_id):
     return jsonify(rows)
 
 
-#Q3 http://127.0.0.1:5000/customers/47293563/reviews
+#Q3 http://35.193.191.108:5000/customers/37944984/reviews
 @app.route('/customers/<customer_id>/reviews')
 def reviews_by_customer_id(customer_id):
     rows = session.execute("SELECT JSON review_id FROM reviews.reviews_by_customer_id "
@@ -51,7 +51,7 @@ def reviews_by_customer_id(customer_id):
     return jsonify(rows)
 
 
-#Q4 http://127.0.0.1:5000/products?sorted_by_reviews=1&start_date=2013-08-01&end_date=2013-10-01&limit=20
+#Q4 http://127.0.0.1:5000/products?sorted_by_reviews=1&start_date=2015-01-01&end_date=2015-01-01&limit=20
 @app.route('/products')
 def most_reviewed_items_in_date_range():
     start_date = request.args.get('start_date')
